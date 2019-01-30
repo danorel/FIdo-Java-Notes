@@ -6,10 +6,7 @@ import javax.swing.event.MenuKeyListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 public class NotesAppearance extends JFrame {
     private static final int WIDTH = 640;
@@ -29,6 +26,7 @@ public class NotesAppearance extends JFrame {
     private JMenuItem save;
     private JMenuItem edit;
     private JMenuItem rename;
+    private JMenuItem open;
 
     // Text area for writing there some notes
     private JTextArea notesArea;
@@ -74,10 +72,13 @@ public class NotesAppearance extends JFrame {
         create.addActionListener(new CreateMenuItemActionListener());
         rename = new JMenuItem("Rename");
         rename.addActionListener(new RenameMenuItemActionListener());
+        open = new JMenuItem("Open");
+        open.addActionListener(new OpenMenuItemActionListener());
         temporaryBar.add(notes);
         temporaryBar.add(tools);
         notes.add(preferences);
         notes.add(close);
+        tools.add(open);
         tools.add(create);
         tools.add(rename);
         tools.add(save);
@@ -120,13 +121,41 @@ public class NotesAppearance extends JFrame {
 
     private class EditMenuItemActionListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-
+            pane.getComponentAt(pane.getSelectedIndex()).setEnabled(true);
         }
     }
 
     private class RenameMenuItemActionListener implements ActionListener{
         public void actionPerformed(ActionEvent event) {
 //            pane.setTitleAt(pane.getSelectedIndex(), );
+        }
+    }
+
+    private class OpenMenuItemActionListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            JFileChooser fileChooser = new JFileChooser();
+            Frame innerFrame = new JFrame();
+            innerFrame.setLocationRelativeTo(frame);
+            if (fileChooser.showOpenDialog(innerFrame) == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                try {
+                    BufferedReader reader = new BufferedReader(new FileReader(file.getPath()));
+                    String line;
+                    String content = "";
+                    while((line = reader.readLine()) != null){
+                        content += line + "\n";
+                    }
+                    notesArea = new JTextArea(notesAreaHeight, notesAreaWidth);
+                    notesArea.append(content);
+                    notesArea.setBackground(new Color(0xB2C0BE));
+                    pane.add("Note", notesArea);
+                    reader.close();
+                } catch (FileNotFoundException exception) {
+                    exception.printStackTrace();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                }
+            }
         }
     }
 
