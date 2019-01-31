@@ -47,7 +47,7 @@ public class NotesAppearance extends JFrame {
         main = new JPanel();
         // Tabbed pane initialization
         pane = new JTabbedPane();
-        checkForNotes();
+        checkForExistingNotes();
         // Adding the tabbed pane to the main panel
         main.add(pane, BorderLayout.CENTER);
         // Adding the panels and menu to the frame
@@ -63,7 +63,7 @@ public class NotesAppearance extends JFrame {
         save = new JMenuItem("Save");
         save.addActionListener(new SaveMenuItemActionListener());
         edit = new JMenuItem("Edit");
-        save.addActionListener(new EditMenuItemActionListener());
+        edit.addActionListener(new EditMenuItemActionListener());
         close = new JMenuItem("Close");
         close.addActionListener(new CloseMenuItemActionListener());
         preferences = new JMenuItem("Preferences");
@@ -85,9 +85,14 @@ public class NotesAppearance extends JFrame {
         return temporaryBar;
     }
 
-    private boolean checkForNotes(){
+    private ArrayList<File> getDirectoryFiles(){
         File directoryContent = new File("data");
         ArrayList<File> files = new ArrayList<File>(Arrays.asList(directoryContent.listFiles()));
+        return files;
+    }
+
+    private boolean checkForExistingNotes(){
+        ArrayList<File> files = getDirectoryFiles();
         if(files.size() != 0){
             String content = "";
             for(File file : files){
@@ -125,15 +130,37 @@ public class NotesAppearance extends JFrame {
 
     private class SaveMenuItemActionListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            JFileChooser fileChooser = new JFileChooser();
-            if (fileChooser.showSaveDialog(new JFrame()) == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
+            BufferedWriter writer;
+            ArrayList<File> files = getDirectoryFiles();
+            boolean fileNotExists = true;
+            File existingFile = null;
+            for (File file : files) {
+                if ((file.getName().substring(0, 1).toUpperCase() + file.getName().substring(1, file.getName().length() - 4)).equals(pane.getTitleAt(pane.getSelectedIndex()))) {
+                    fileNotExists = false;
+                    existingFile = file;
+                    break;
+                }
+            }
+            if(fileNotExists) {
+                JFileChooser fileChooser = new JFileChooser();
+                if (fileChooser.showSaveDialog(new JFrame()) == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    try {
+                        file.createNewFile();
+                        writer = new BufferedWriter(new FileWriter(file.getPath()));
+                        writer.write(area.getText());
+                        ((JTextArea) pane.getComponentAt(pane.getSelectedIndex())).setEditable(false);
+                        writer.close();
+                    } catch (IOException exception) {
+                        exception.printStackTrace();
+                    }
+                }
+            } else {
                 try {
-                    file.createNewFile();
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(file.getPath()));
+                    writer = new BufferedWriter(new FileWriter(existingFile.getPath()));
                     area = (JTextArea) pane.getComponentAt(pane.getSelectedIndex());
-                    area.setEditable(false);
                     writer.write(area.getText());
+                    area.setEditable(false);
                     writer.close();
                 } catch (IOException exception) {
                     exception.printStackTrace();
@@ -150,7 +177,7 @@ public class NotesAppearance extends JFrame {
 
     private class EditMenuItemActionListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            pane.getComponentAt(pane.getSelectedIndex()).setEnabled(true);
+            ((JTextArea) pane.getComponentAt(pane.getSelectedIndex())).setEditable(true);
         }
     }
 
