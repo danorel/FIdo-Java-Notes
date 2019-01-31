@@ -25,6 +25,7 @@ public class NotesAppearance extends JFrame {
     private JMenuItem edit;
     private JMenuItem rename;
     private JMenuItem open;
+    private JMenuItem delete;
 
     // Text area for writing there some notes
     private JTextArea area;
@@ -67,12 +68,15 @@ public class NotesAppearance extends JFrame {
         close = new JMenuItem("Close");
         close.addActionListener(new CloseMenuItemActionListener());
         preferences = new JMenuItem("Preferences");
+        preferences.addActionListener(new PreferencesMenuItemActionListener());
         create = new JMenuItem("Create");
         create.addActionListener(new CreateMenuItemActionListener());
         rename = new JMenuItem("Rename");
         rename.addActionListener(new RenameMenuItemActionListener());
         open = new JMenuItem("Open");
         open.addActionListener(new OpenMenuItemActionListener());
+        delete = new JMenuItem("Delete");
+        delete.addActionListener(new DeleteMenuItemActionListener());
         temporaryBar.add(notes);
         temporaryBar.add(tools);
         notes.add(preferences);
@@ -82,6 +86,7 @@ public class NotesAppearance extends JFrame {
         tools.add(rename);
         tools.add(save);
         tools.add(edit);
+        tools.add(delete);
         return temporaryBar;
     }
 
@@ -125,6 +130,7 @@ public class NotesAppearance extends JFrame {
             area = new JTextArea(areaRows, areaColumns);
             area.setBackground(new Color(0xB2C0BE));
             pane.add("Note", area);
+            pane.setSelectedIndex(pane.getTabCount() - 1);
         }
     }
 
@@ -143,12 +149,14 @@ public class NotesAppearance extends JFrame {
             }
             if(fileNotExists) {
                 JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setCurrentDirectory(new File("data"));
                 if (fileChooser.showSaveDialog(new JFrame()) == JFileChooser.APPROVE_OPTION) {
                     File file = fileChooser.getSelectedFile();
                     try {
                         file.createNewFile();
                         writer = new BufferedWriter(new FileWriter(file.getPath()));
                         writer.write(area.getText());
+                        pane.setTitleAt(pane.getSelectedIndex(), file.getName().substring(0, 1).toUpperCase() + file.getName().substring(1, file.getName().length() - 4));
                         ((JTextArea) pane.getComponentAt(pane.getSelectedIndex())).setEditable(false);
                         writer.close();
                     } catch (IOException exception) {
@@ -169,6 +177,18 @@ public class NotesAppearance extends JFrame {
         }
     }
 
+    private class DeleteMenuItemActionListener implements ActionListener{
+        public void actionPerformed(ActionEvent event) {
+            ArrayList<File> files = getDirectoryFiles();
+            for(File file : files){
+                if((file.getName().substring(0, 1).toUpperCase() + file.getName().substring(1, file.getName().length() - 4)).equals(pane.getTitleAt(pane.getSelectedIndex()))){
+                    file.delete();
+                }
+            }
+            pane.remove(pane.getComponentAt(pane.getSelectedIndex()));
+        }
+    }
+
     private class CloseMenuItemActionListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             System.exit(0);
@@ -183,7 +203,35 @@ public class NotesAppearance extends JFrame {
 
     private class RenameMenuItemActionListener implements ActionListener{
         public void actionPerformed(ActionEvent event) {
-//            pane.setTitleAt(pane.getSelectedIndex(), );
+            String title = JOptionPane.showInputDialog("Rename the selected Note");
+            boolean fileNotExists = true;
+            ArrayList<File> files = getDirectoryFiles();
+            File existingFile = null;
+            for(File file : files){
+                if((file.getName().substring(0, 1).toUpperCase() + file.getName().substring(1, file.getName().length() - 4)).equals(pane.getTitleAt(pane.getSelectedIndex()))){
+                    existingFile = file;
+                    fileNotExists = false;
+                }
+            }
+            if(!fileNotExists){
+                try {
+                    String content = "", line;
+                    BufferedReader reader = new BufferedReader(new FileReader(existingFile.getPath()));
+                    while((line = reader.readLine()) != null){
+                        content += line + "\n";
+                    }
+                    existingFile = new File("data/" + title);
+                    BufferedWriter writer = new BufferedWriter(new FileWriter("data/" + title));
+                    writer.write(content);
+                    writer.close();
+                    reader.close();
+                } catch (FileNotFoundException exception) {
+                    exception.printStackTrace();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                }
+            }
+            pane.setTitleAt(pane.getSelectedIndex(), title);
         }
     }
 
@@ -212,6 +260,15 @@ public class NotesAppearance extends JFrame {
                     exception.printStackTrace();
                 }
             }
+        }
+    }
+
+    private class PreferencesMenuItemActionListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            JFrame innerFrame = new JFrame("Preferences");
+            innerFrame.setLocationRelativeTo(null);
+            innerFrame.setSize(WIDTH / 2, HEIGHT / 2);
+            innerFrame.setVisible(true);
         }
     }
 }
