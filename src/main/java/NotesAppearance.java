@@ -1,12 +1,10 @@
-import com.sun.javafx.scene.control.skin.CustomColorDialog;
-
 import javax.swing.*;
-import javax.swing.event.MenuKeyEvent;
-import javax.swing.event.MenuKeyListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class NotesAppearance extends JFrame {
     private static final int WIDTH = 640;
@@ -29,9 +27,9 @@ public class NotesAppearance extends JFrame {
     private JMenuItem open;
 
     // Text area for writing there some notes
-    private JTextArea notesArea;
-    private final int notesAreaWidth = 37;
-    private final int notesAreaHeight = 23;
+    private JTextArea area;
+    private final int areaColumns = 37;
+    private final int areaRows = 23;
 
     private JTabbedPane pane;
 
@@ -49,6 +47,7 @@ public class NotesAppearance extends JFrame {
         main = new JPanel();
         // Tabbed pane initialization
         pane = new JTabbedPane();
+        checkForNotes();
         // Adding the tabbed pane to the main panel
         main.add(pane, BorderLayout.CENTER);
         // Adding the panels and menu to the frame
@@ -86,11 +85,41 @@ public class NotesAppearance extends JFrame {
         return temporaryBar;
     }
 
+    private boolean checkForNotes(){
+        File directoryContent = new File("data");
+        ArrayList<File> files = new ArrayList<File>(Arrays.asList(directoryContent.listFiles()));
+        if(files.size() != 0){
+            String content = "";
+            for(File file : files){
+                if(file.getName().substring(file.getName().length() - 3).equals("txt")){
+                    try {
+                        BufferedReader reader = new BufferedReader(new FileReader(file.getPath()));
+                        String line;
+                        while((line = reader.readLine()) != null){
+                            content += line + "\n";
+                        }
+                    } catch (FileNotFoundException exception) {
+                        exception.printStackTrace();
+                    } catch (IOException exception) {
+                        exception.printStackTrace();
+                    }
+                    area = new JTextArea(areaRows, areaColumns);
+                    area.setBackground(new Color(0xB2C0BE));
+                    area.append(content);
+                    pane.add(Character.toUpperCase(file.getName().charAt(0)) + file.getName().substring(1, file.getName().length() - 4), area);
+                }
+                content = "";
+            }
+            return true;
+        }
+        return false;
+    }
+
     private class CreateMenuItemActionListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            notesArea = new JTextArea(notesAreaHeight, notesAreaWidth);
-            notesArea.setBackground(new Color(0xB2C0BE));
-            pane.add("Note", notesArea);
+            area = new JTextArea(areaRows, areaColumns);
+            area.setBackground(new Color(0xB2C0BE));
+            pane.add("Note", area);
         }
     }
 
@@ -102,9 +131,9 @@ public class NotesAppearance extends JFrame {
                 try {
                     file.createNewFile();
                     BufferedWriter writer = new BufferedWriter(new FileWriter(file.getPath()));
-                    notesArea = (JTextArea) pane.getComponentAt(pane.getSelectedIndex());
-                    notesArea.setEditable(false);
-                    writer.write(notesArea.getText());
+                    area = (JTextArea) pane.getComponentAt(pane.getSelectedIndex());
+                    area.setEditable(false);
+                    writer.write(area.getText());
                     writer.close();
                 } catch (IOException exception) {
                     exception.printStackTrace();
@@ -145,10 +174,10 @@ public class NotesAppearance extends JFrame {
                     while((line = reader.readLine()) != null){
                         content += line + "\n";
                     }
-                    notesArea = new JTextArea(notesAreaHeight, notesAreaWidth);
-                    notesArea.append(content);
-                    notesArea.setBackground(new Color(0xB2C0BE));
-                    pane.add("Note", notesArea);
+                    area = new JTextArea(areaRows, areaColumns);
+                    area.append(content);
+                    area.setBackground(new Color(0xB2C0BE));
+                    pane.add("Note", area);
                     reader.close();
                 } catch (FileNotFoundException exception) {
                     exception.printStackTrace();
@@ -156,21 +185,6 @@ public class NotesAppearance extends JFrame {
                     exception.printStackTrace();
                 }
             }
-        }
-    }
-
-    private class ToolsMenuKeyListener implements MenuKeyListener {
-
-        public void menuKeyTyped(MenuKeyEvent event) {
-
-        }
-
-        public void menuKeyPressed(MenuKeyEvent event) {
-
-        }
-
-        public void menuKeyReleased(MenuKeyEvent event) {
-
         }
     }
 }
